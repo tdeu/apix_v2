@@ -1,7 +1,7 @@
 {
   "name": "apix-ai",
-  "version": "2.0.2",
-  "description": "Enterprise AI-powered Hedera development assistant with code composition and live blockchain validation",
+  "version": "2.1.0-beta.1",
+  "description": "Enterprise AI-powered multi-blockchain development assistant with intelligent chain selection",
   "main": "dist/cli/index.js",
   "bin": {
     "apix": "dist/cli/index.js"
@@ -49,8 +49,12 @@
     "cli:test": "npx ts-node src/cli/index.ts"
   },
   "keywords": [
-    "hedera",
     "blockchain",
+    "multi-chain",
+    "hedera",
+    "ethereum",
+    "solana",
+    "base",
     "cli",
     "ai",
     "integration"
@@ -93,6 +97,12 @@
     "terminal-kit": "^3.1.2",
     "uuid": "^9.0.0",
     "zod": "^3.22.0"
+  },
+  "optionalDependencies": {
+    "ethers": "^6.13.0",
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.0",
+    "@metaplex-foundation/js": "^0.20.0"
   },
   "devDependencies": {
     "@types/blessed": "^0.1.25",

@@ -1,7 +1,56 @@
 #!/usr/bin/env node
 
-// Load environment variables from .env file
-require('dotenv').config();
+import * as path from 'path';
+import * as fs from 'fs';
+
+// Load environment variables from APIX installation directory first
+// This ensures API keys are available regardless of which project the user runs APIX from
+const dotenv = require('dotenv');
+
+// Find APIX root by looking for package.json with name "apix-ai"
+function findApixRoot(): string {
+  let dir = __dirname;
+
+  // Walk up from dist/cli to find the package root
+  for (let i = 0; i < 5; i++) {
+    const packagePath = path.join(dir, 'package.json');
+    if (fs.existsSync(packagePath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+        if (pkg.name === 'apix-ai') {
+          return dir;
+        }
+      } catch {}
+    }
+    dir = path.dirname(dir);
+  }
+
+  // Fallback: try common locations
+  const possibleRoots = [
+    path.resolve(__dirname, '../..'),  // dist/cli -> root
+    path.resolve(__dirname, '..'),     // dist -> root (if cli is flattened)
+  ];
+
+  for (const root of possibleRoots) {
+    const envPath = path.join(root, '.env');
+    if (fs.existsSync(envPath)) {
+      return root;
+    }
+  }
+
+  return path.resolve(__dirname, '../..');
+}
+
+const apixRoot = findApixRoot();
+const apixEnvPath = path.join(apixRoot, '.env');
+
+// Load APIX's .env if it exists - use override:true to force our .env over system env vars
+if (fs.existsSync(apixEnvPath)) {
+  dotenv.config({ path: apixEnvPath, override: true });
+}
+
+// Also load from user's project directory (allows project-specific overrides)
+dotenv.config();
 
 import { program } from 'commander';
 import chalk from 'chalk';
@@ -104,7 +153,7 @@ function setupLogging(options: any) {
 
 program
   .name('apix')
-  .description('Enterprise AI-powered Hedera development assistant')
+  .description('Enterprise AI-powered multi-chain blockchain development assistant')
   .version(packageJson.version)
   .option('-q, --quiet', 'Minimal output (errors only)')
   .option('-v, --verbose', 'Detailed output')
@@ -122,14 +171,14 @@ program
     if (!options.quiet && !options.json) {
       console.log(chalk.bold('APIX AI'), chalk.gray(`v${packageJson.version}`));
       if (options.verbose) {
-        console.log(chalk.gray('Enterprise Hedera Development Assistant\n'));
+        console.log(chalk.gray('Multi-Chain Blockchain Development Assistant\n'));
       }
     }
   });
 
 program
   .command('analyze')
-  .description('Analyze your project and suggest Hedera integrations')
+  .description('Analyze your project and suggest blockchain integrations')
   .option('-d, --directory <path>', 'Project directory to analyze', '.')
   .option('-v, --verbose', 'Show detailed analysis')
   .action(async (options) => {
@@ -159,7 +208,7 @@ program
 
 program
   .command('add <integration>')
-  .description('Add Hedera integration to your project')
+  .description('Add blockchain integration to your project')
   .option('-n, --name <n>', 'Integration name')
   .option('-s, --symbol <symbol>', 'Token symbol (for HTS)')
   .option('-p, --provider <provider>', 'Wallet provider')
@@ -214,7 +263,7 @@ program
 
 program
   .command('status')
-  .description('Check status of Hedera integrations')
+  .description('Check status of blockchain integrations')
   .action(async (options) => {
     const globalOptions = program.opts();
     const allOptions = { ...options, ...globalOptions };
@@ -265,7 +314,7 @@ program
 
 program
   .command('generate <integration>')
-  .description('Generate enterprise Hedera integration with AI-powered code composition')
+  .description('Generate enterprise blockchain integration with AI-powered code composition')
   .option('--industry <industry>', 'Target industry (pharmaceutical, financial-services, insurance, etc.)')
   .option('--regulation <regulations...>', 'Applicable regulations (FDA-21CFR11, SOX, GDPR, etc.)')
   .option('--business-context <context>', 'Business context description')
@@ -273,7 +322,8 @@ program
   .option('--integration-type <type>', 'Integration complexity (simple, moderate, complex, novel)')
   .option('--framework <framework>', 'Target framework override')
   .option('--custom-logic', 'Enable AI custom logic generation')
-  .option('--validate-live', 'Perform live Hedera blockchain validation')
+  .option('--chain <chain>', 'Target blockchain (hedera, ethereum, solana, base)')
+  .option('--validate-live', 'Perform live blockchain validation')
   .option('-f, --force', 'Force overwrite existing files')
   .action(async (integration, options) => {
     const globalOptions = program.opts();
@@ -312,7 +362,8 @@ program
   .option('--constraints <constraints...>', 'Technical or business constraints')
   .option('--templates <templates...>', 'Base templates to combine')
   .option('--novel-pattern', 'Create entirely new implementation pattern')
-  .option('--validate-live', 'Perform live Hedera validation')
+  .option('--chain <chain>', 'Target blockchain (hedera, ethereum, solana, base)')
+  .option('--validate-live', 'Perform live blockchain validation')
   .action(async (options) => {
     try {
       await ensureCliInitialized();
@@ -326,7 +377,7 @@ program
 
 program
   .command('chat')
-  .description('Interactive conversational interface for enterprise Hedera development')
+  .description('Interactive conversational interface for blockchain development')
   .option('--context <context>', 'Initial business context')
   .option('--industry <industry>', 'Industry context')
   .option('--session-file <file>', 'Load previous conversation session')
@@ -346,9 +397,10 @@ program
 
 program
   .command('validate')
-  .description('Comprehensive validation with live Hedera blockchain testing')
-  .option('--testnet', 'Use Hedera testnet for validation')
-  .option('--mainnet', 'Use Hedera mainnet for validation (production)')
+  .description('Comprehensive validation with live blockchain testing')
+  .option('--chain <chain>', 'Target blockchain (hedera, ethereum, solana, base)')
+  .option('--testnet', 'Use testnet for validation')
+  .option('--mainnet', 'Use mainnet for validation (production)')
   .option('--enterprise', 'Run enterprise-grade compliance validation')
   .option('--compliance <frameworks...>', 'Test specific compliance frameworks')
   .option('--performance', 'Include performance testing')
@@ -367,7 +419,7 @@ program
 
 program
   .command('recommend')
-  .description('AI-powered enterprise Hedera service recommendations')
+  .description('AI-powered blockchain service and chain recommendations')
   .option('--business-goals <goals...>', 'Business objectives')
   .option('--industry <industry>', 'Industry context')
   .option('--current-systems <systems...>', 'Existing systems to integrate')
@@ -391,7 +443,7 @@ program
 
 program
   .command('explain')
-  .description('AI-powered explanations of Hedera concepts and enterprise patterns')
+  .description('AI-powered explanations of blockchain concepts and enterprise patterns')
   .argument('<concept>', 'Concept to explain (e.g., "HTS vs smart contracts for loyalty points")')
   .option('--industry <industry>', 'Industry-specific explanation')
   .option('--detailed', 'Provide detailed technical explanation')
@@ -410,7 +462,7 @@ program
 
 program
   .command('compare')
-  .description('AI-powered comparison of Hedera approaches for enterprise use cases')
+  .description('AI-powered comparison of blockchain approaches for enterprise use cases')
   .argument('<approaches>', 'Approaches to compare (e.g., "HCS vs smart contracts for audit trails")')
   .option('--use-case <usecase>', 'Specific use case context')
   .option('--industry <industry>', 'Industry context')
@@ -446,7 +498,7 @@ program
 
 program
   .command('debug')
-  .description('AI-powered debugging assistance for Hedera integration issues')
+  .description('AI-powered debugging assistance for blockchain integration issues')
   .argument('<issue>', 'Issue description or error message')
   .option('--context <context>', 'Additional context about the issue')
   .option('--files <files...>', 'Related files to analyze')
@@ -485,7 +537,7 @@ program
 
 program
   .command('create-token')
-  .description('Create a token directly on Hedera blockchain (live blockchain operation)')
+  .description('Create a token on blockchain (live blockchain operation)')
   .option('-n, --name <name>', 'Token name', 'Test Token')
   .option('-s, --symbol <symbol>', 'Token symbol', 'TEST')
   .option('-d, --decimals <decimals>', 'Token decimals', '8')
@@ -494,6 +546,7 @@ program
   .option('--supply-key', 'Enable supply key', false)
   .option('--freeze-key', 'Enable freeze key', false)
   .option('--wipe-key', 'Enable wipe key', false)
+  .option('--chain <chain>', 'Target blockchain (hedera, ethereum, solana, base)', 'hedera')
   .option('--testnet', 'Use testnet (default)')
   .option('--mainnet', 'Use mainnet (production)')
   .action(async (options) => {
@@ -703,19 +756,51 @@ program
     }
   });
 
+// =============================================================================
+// LAUNCH COMMAND - THE UNIFIED EXPERIENCE
+// =============================================================================
+
+program
+  .command('launch')
+  .description('Start the interactive APIX experience (recommended)')
+  .action(async () => {
+    try {
+      const { LaunchInterface } = await import('./launch-interface');
+      const launcher = new LaunchInterface();
+      await launcher.launch();
+    } catch (error: any) {
+      console.error(chalk.red('Failed to start APIX:'), error.message);
+      process.exit(1);
+    }
+  });
+
 program.showHelpAfterError();
 
-try {
-  program.parse(process.argv);
-  
-  if (!process.argv.slice(2).length) {
-    program.outputHelp();
-  }
-} catch (error: any) {
-  // Commander throws an error when showing help, this is normal
-  if (error.code !== 'commander.helpDisplayed') {
-    logger.error('Command failed:', error);
-    process.exit(1);
+// Parse arguments
+const args = process.argv.slice(2);
+
+// If no arguments provided, launch the unified experience
+if (args.length === 0) {
+  // Launch the interactive experience by default
+  (async () => {
+    try {
+      const { LaunchInterface } = await import('./launch-interface');
+      const launcher = new LaunchInterface();
+      await launcher.launch();
+    } catch (error: any) {
+      console.error(chalk.red('Failed to start APIX:'), error.message);
+      process.exit(1);
+    }
+  })();
+} else {
+  // Parse specific command
+  try {
+    program.parse(process.argv);
+  } catch (error: any) {
+    if (error.code !== 'commander.helpDisplayed') {
+      logger.error('Command failed:', error);
+      process.exit(1);
+    }
   }
 }
 

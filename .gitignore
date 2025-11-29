@@ -41,6 +41,12 @@ coverage/
 # APIx
 .apix/
 
+# Documentation (internal/generated)
+docs/
+
 # Temporary
 tmp/
 temp/
+
+# Windows
+nul

@@ -1,126 +1,93 @@
 /**
  * Base (Coinbase L2) Blockchain Adapter
  *
- * Implements the BlockchainAdapter interface for Base.
- * To be implemented in Phase 3 (Week 3-4).
+ * Implements the BlockchainAdapter interface for Base by extending EthereumAdapter.
+ * Base is an Ethereum L2 built on the OP Stack, so it's fully EVM-compatible.
  *
- * Current Status: Placeholder
- * Note: Base is EVM-compatible and will extend/reuse EthereumAdapter logic.
+ * Key differences from Ethereum:
+ * - Different chain IDs: 8453 (mainnet), 84532 (Base Sepolia)
+ * - Different RPC endpoints: base.org
+ * - Different block explorer: basescan.org
+ * - Lower gas fees (~1/100th of Ethereum L1)
+ * - Faster block times (~2 seconds)
+ *
+ * All other operations (ERC-20, ERC-721, contracts) work identically to Ethereum.
  */
 
-import { BaseBlockchainAdapter } from '../core/BlockchainAdapter'
+import { EthereumAdapter } from './EthereumAdapter'
 import {
   BlockchainConfiguration,
-  CreateTokenParams,
-  TokenResult,
-  CreateNFTParams,
-  NFTResult,
-  MintNFTParams,
-  TransferParams,
-  TransferNFTParams,
-  TransactionResult,
-  BalanceParams,
-  DeployContractParams,
-  ContractResult,
-  CallContractParams,
-  WalletProvider,
-  WalletConnection,
-  Transaction,
-  SignedTransaction,
-  GasPrice,
-  EstimateFeeParams,
-  FeeEstimate,
-  TransactionStatus,
-  NetworkType,
-  BlockchainError,
-  BlockchainErrorCode,
+  SupportedChain,
 } from '../core/types'
 import { CHAIN_CAPABILITIES, CHAIN_METADATA } from '../core/ChainCapabilities'
 
 /**
- * Base Blockchain Adapter.
- * Phase 3, Milestone 3.2 will implement this by extending EthereumAdapter.
+ * Base Blockchain Adapter
  *
- * Base is an Ethereum L2, so most logic will be inherited from EthereumAdapter
- * with Base-specific RPC endpoints and chain IDs.
+ * Extends EthereumAdapter with Base-specific configuration.
+ * All ERC-20, ERC-721, and smart contract operations are inherited.
  */
-export class BaseAdapter extends BaseBlockchainAdapter {
-  readonly chainId = 'base' as const
-  readonly name = 'Base'
+export class BaseAdapter extends EthereumAdapter {
+  // Override metadata for Base
+  readonly chainId: SupportedChain = 'base'
+  readonly name: string = 'Base'
   readonly capabilities = CHAIN_CAPABILITIES.base
-  network: NetworkType = 'testnet'
 
+  /**
+   * Override initialize to log Base-specific message.
+   */
   async initialize(config: BlockchainConfiguration): Promise<void> {
-    throw new BlockchainError(
-      BlockchainErrorCode.UNSUPPORTED_OPERATION,
-      'BaseAdapter not yet implemented. Coming in Phase 3, Week 3-4.'
+    // Call parent initialization
+    await super.initialize(config)
+
+    // Update the log message to reflect Base
+    console.log(
+      `BaseAdapter initialized for ${this.network} with address ${this.operatorAddress}`
     )
   }
 
-  async disconnect(): Promise<void> {
-    this._isConnected = false
+  /**
+   * Get RPC URL for Base network.
+   * Overrides EthereumAdapter to use Base-specific endpoints.
+   */
+  protected getRpcUrl(config: BlockchainConfiguration): string {
+    // Use custom RPC URL if provided
+    if (config.rpcUrl) {
+      return config.rpcUrl
+    }
+
+    // Use chainId-specific URL from customConfig
+    if (config.customConfig?.rpcUrl) {
+      return config.customConfig.rpcUrl
+    }
+
+    // Default Base RPC URLs (free public endpoints)
+    if (this.network === 'mainnet') {
+      return 'https://mainnet.base.org'
+    }
+    return 'https://sepolia.base.org' // Base Sepolia testnet
   }
 
-  async createToken(params: CreateTokenParams): Promise<TokenResult> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
+  /**
+   * Get expected chain ID for Base network.
+   * Overrides EthereumAdapter to use Base chain IDs.
+   */
+  protected getExpectedChainId(): number {
+    const metadata = CHAIN_METADATA.base
+    if (this.network === 'mainnet') {
+      return metadata.chainId?.mainnet as number || 8453
+    }
+    return metadata.chainId?.testnet as number || 84532 // Base Sepolia
   }
 
-  async transferToken(params: TransferParams): Promise<TransactionResult> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async getTokenBalance(params: BalanceParams): Promise<bigint> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async createNFT(params: CreateNFTParams): Promise<NFTResult> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async mintNFT(params: MintNFTParams): Promise<TransactionResult> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async transferNFT(params: TransferNFTParams): Promise<TransactionResult> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async deployContract(params: DeployContractParams): Promise<ContractResult> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async callContract(params: CallContractParams): Promise<any> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async connectWallet(provider: WalletProvider): Promise<WalletConnection> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async getBalance(address: string): Promise<bigint> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async signTransaction(tx: Transaction): Promise<SignedTransaction> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async getGasPrice(): Promise<GasPrice> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async estimateFees(params: EstimateFeeParams): Promise<FeeEstimate> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
-  async getTransactionStatus(txId: string): Promise<TransactionStatus> {
-    throw new BlockchainError(BlockchainErrorCode.UNSUPPORTED_OPERATION, 'Not implemented')
-  }
-
+  /**
+   * Get block explorer URL for a transaction.
+   * Overrides EthereumAdapter to use Basescan.
+   */
   getExplorerUrl(txId: string): string {
     const metadata = CHAIN_METADATA.base
-    const explorerNetwork = (this.network === 'devnet' || this.network === 'localnet') ? 'testnet' : this.network
-    const baseUrl = metadata.explorerUrl[explorerNetwork]
+    const networkKey = this.network === 'mainnet' ? 'mainnet' : 'testnet'
+    const baseUrl = metadata.explorerUrl[networkKey]
     return `${baseUrl}/tx/${txId}`
   }
 }

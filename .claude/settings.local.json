@@ -6,7 +6,22 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(npm run build:check:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo:*)",
+      "Bash(findstr:*)",
+      "Bash(dir /s \"C:\\Users\\thoma\\Bureau\\apix_v2\\src\")",
+      "Bash(cat:*)",
+      "Bash(dir:*)",
+      "Bash(node dist/cli/index.js:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run link:local:*)",
+      "Bash(apix --version:*)",
+      "Bash(npm link)",
+      "Bash(npm unlink:*)",
+      "Bash(node -e:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

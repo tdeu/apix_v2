@@ -468,11 +468,13 @@ export class APIxCLI {
       await this.config.save(config);
       
       spinner.succeed('✅ APIx initialized successfully!');
-      
+
       console.log(chalk.green('\n🎉 You\'re ready to use APIx!'));
-      console.log(chalk.cyan('Next steps:'));
-      console.log(chalk.gray('  • Run'), chalk.yellow('apix analyze'), chalk.gray('to analyze your project'));
-      console.log(chalk.gray('  • Run'), chalk.yellow('apix add <integration>'), chalk.gray('to add integrations'));
+      console.log(chalk.cyan('\nRecommended workflow:'));
+      console.log(chalk.white('  1.'), chalk.yellow('apix analyze'), chalk.gray('     → Analyze your project structure'));
+      console.log(chalk.white('  2.'), chalk.yellow('apix recommend'), chalk.gray('   → Get AI-powered blockchain recommendations'));
+      console.log(chalk.white('  3.'), chalk.yellow('apix add <integration>'), chalk.gray(' → Add blockchain features'));
+      console.log(chalk.gray('\n💡 Or start a conversation:'), chalk.yellow('apix chat'));
 
     } catch (error) {
       spinner.fail('❌ Initialization failed');
@@ -666,24 +668,36 @@ export class APIxCLI {
   }
 
   private async gatherConfiguration(): Promise<any> {
-    return inquirer.prompt([
+    // Simple init - just gather basic project preferences
+    // Blockchain selection comes AFTER analysis via `apix recommend`
+
+    const answers = await inquirer.prompt([
       {
         type: 'list',
         name: 'network',
-        message: 'Which Hedera network do you want to use?',
-        choices: ['testnet', 'mainnet'],
+        message: 'Which network environment do you prefer for development?',
+        choices: [
+          { name: 'Testnet (recommended for development)', value: 'testnet' },
+          { name: 'Mainnet (production)', value: 'mainnet' }
+        ],
         default: 'testnet'
       },
       {
-        type: 'input',
-        name: 'accountId',
-        message: 'Enter your Hedera Account ID (optional):',
-        validate: (input: string) => {
-          if (!input) return true;
-          return /^\d+\.\d+\.\d+$/.test(input) || 'Invalid account ID format (e.g., 0.0.123)';
-        }
+        type: 'confirm',
+        name: 'enableAI',
+        message: 'Enable AI-powered recommendations? (requires API key)',
+        default: true
       }
     ]);
+
+    return {
+      network: answers.network,
+      enableAI: answers.enableAI,
+      version: '2.1.0',
+      // Blockchain selection will be added after `apix analyze` + `apix recommend`
+      chains: [],
+      primaryChain: null
+    };
   }
 
   private isValidIntegration(integration: string): boolean {

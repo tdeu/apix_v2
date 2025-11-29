@@ -219,7 +219,7 @@ export class ConversationEngine {
     } else if (lowerMessage.includes('supply chain')) {
       mockContent += 'For supply chain tracking, I recommend combining HCS for immutable audit trails with HTS for asset tokenization. This creates end-to-end traceability with regulatory compliance.';
     } else {
-      mockContent += 'I can help you build enterprise-grade Hedera integrations with built-in compliance and security. What specific blockchain functionality do you need?';
+      mockContent += 'I can help you build blockchain integrations on Hedera, Ethereum, Solana, or Base. What specific functionality do you need?';
     }
 
     return {
@@ -237,23 +237,31 @@ export class ConversationEngine {
    * Build system prompt for Claude
    */
   private buildSystemPrompt(context: any): string {
-    return `You are APIX AI, an expert enterprise Hedera blockchain development assistant.
+    return `You are APIX AI, a multi-chain blockchain development assistant.
 
-Your expertise includes:
-- Hedera services: HTS (tokens), HCS (consensus), Smart Contracts, File Service
-- Enterprise compliance: SOC2, GDPR, HIPAA, FDA regulations
-- Industry knowledge: ${context.industry || 'Various industries'}
-- Technical frameworks: Next.js, React, TypeScript
+You help developers choose the RIGHT blockchain for their specific use case. You are NEUTRAL and objective - you recommend based on the user's actual needs, not any preference.
+
+SUPPORTED BLOCKCHAINS (treat all equally):
+- Hedera: Enterprise-grade, lowest fees ($0.0001), native token service (HTS), governed by Google/IBM/Boeing
+- Ethereum: Largest ecosystem, maximum decentralization, highest liquidity, most wallets
+- Solana: Fastest (400ms finality, 3000 TPS), cheapest NFT minting, great for gaming/NFTs
+- Base: Ethereum L2, Coinbase integration, low fees, easy fiat on-ramps
+
+RECOMMENDATION GUIDELINES:
+- NFTs/Gaming → Prefer Solana (fast, cheap minting) or Base (Coinbase wallet)
+- Enterprise/Compliance → Prefer Hedera (governance, predictable fees)
+- DeFi → Prefer Ethereum (liquidity) or Base (lower fees)
+- Payments → Prefer Base (Coinbase) or Solana (speed)
+- Tokens/Loyalty → Any chain works, recommend based on other factors
 
 Current context:
-- Industry: ${context.industry || 'Not specified'}
-- Company size: ${context.companySize}
+- Selected chain: ${context.selectedChain || 'Not yet selected'}
+- Use case: ${context.useCase || 'Not specified'}
 - Project: ${context.currentProject || 'Not specified'}
 
-Provide helpful, practical advice for Hedera blockchain integration with enterprise focus.
-Be specific about which Hedera services to use and why.
-Include compliance considerations when relevant.
-Keep responses concise but comprehensive.`;
+IMPORTANT: If the user selected a chain, respect their choice and help them build on it.
+Only suggest switching if they explicitly ask for recommendations or if there's a major issue.
+Be specific, practical, and concise. Focus on helping them succeed with their chosen approach.`;
   }
 
   /**
@@ -279,24 +287,26 @@ Keep responses concise but comprehensive.`;
    * Generate contextual suggestions
    */
   private generateSuggestions(message: string, context: any): string[] {
+    const chain = context.selectedChain || 'blockchain';
+
     const baseSuggestions = [
       'Generate code for this requirement',
       'Explain the implementation approach',
-      'Compare different Hedera services',
-      'Show compliance requirements'
+      `Compare ${chain} with other options`,
+      'Show best practices'
     ];
 
     if (context.industry === 'pharmaceutical') {
       return [
         'Generate FDA-compliant tracking system',
-        'Implement drug serialization with HTS',
-        'Create audit trail with HCS',
+        'Implement supply chain tracking',
+        'Create audit trail system',
         'Add regulatory reporting'
       ];
     } else if (context.industry === 'financial-services') {
       return [
-        'Generate SOX-compliant payment system',
-        'Implement tokenized assets with HTS',
+        'Generate compliant payment system',
+        'Implement tokenized assets',
         'Create audit trail compliance',
         'Add KYC/AML integration'
       ];
@@ -319,22 +329,22 @@ Keep responses concise but comprehensive.`;
   private generateWelcomeMessage(context?: Partial<any>): string {
     const { logger, LogLevel } = require('../../utils/logger');
     const industryContext = context?.industry ? ` (${context.industry})` : '';
-    
+
     // Minimal welcome message by default
     if (!logger.isLevelEnabled(LogLevel.VERBOSE)) {
-      return `Hello! I'm APIX AI, your Hedera development assistant${industryContext}.\n\nHow can I help you with blockchain development today?`;
+      return `Hello! I'm APIX AI, your multi-chain blockchain assistant${industryContext}.\n\nI support Hedera, Ethereum, Solana, and Base. How can I help you today?`;
     }
-    
+
     // Detailed welcome only in verbose mode
-    return `Hello! I'm APIX AI, your intelligent Hedera development assistant${industryContext}.
+    return `Hello! I'm APIX AI, your multi-chain blockchain development assistant${industryContext}.
 
 I can help you with:
-• Enterprise Integration - Analyze your business needs and recommend optimal Hedera services
-• Code Generation - Create production-ready implementations with AI-powered customization  
-• Live Validation - Test your integrations on the Hedera network in real-time
-• Solution Architecture - Design scalable, compliant blockchain solutions
+• Chain Selection - Find the best blockchain for your use case (Hedera, Ethereum, Solana, Base)
+• Code Generation - Create production-ready integrations with AI-powered customization
+• Multi-Chain Support - Build on any supported blockchain with the same workflow
+• Best Practices - Design scalable, secure blockchain solutions
 
-What blockchain challenge can I help you solve today?`;
+What would you like to build today?`;
   }
 
   /**
@@ -342,10 +352,10 @@ What blockchain challenge can I help you solve today?`;
    */
   private generateInitialSuggestions(context?: Partial<any>): string[] {
     const baseSuggestions = [
-      'I need to tokenize assets for my business',
-      'Help me build an audit trail system',
+      'I need to create tokens for my business',
+      'Help me build an NFT marketplace',
       'I want to integrate wallet functionality',
-      'Explain Hedera services for my use case'
+      'Which blockchain is best for my use case?'
     ];
 
     if (context?.industry === 'pharmaceutical') {

@@ -20,10 +20,11 @@ import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectAnalyzer } from '../analysis/project-analyzer';
 import { ChainRegistry } from '../blockchain/core/ChainRegistry';
-import { SupportedChain } from '../blockchain/core/types';
+import { SupportedChain, NetworkType } from '../blockchain/core/types';
 import { ProjectContext } from '../types';
 import { ConversationEngine } from '../ai/conversation/conversation-engine';
 import { ChainRankingEngine, UseCase, ProjectContext as RankingContext } from '../blockchain/core/ChainRankingEngine';
+import { CredentialSetup } from './credential-setup';
 
 // Use case categories for smart recommendations
 type UseCaseCategory =
@@ -809,6 +810,14 @@ export class LaunchInterface {
       return;
     }
 
+    // Ensure credentials are set up before generating code
+    const credentialsReady = await this.ensureCredentials();
+    if (!credentialsReady) {
+      console.log(chalk.yellow('\n⚠️  Credentials required to generate code.\n'));
+      console.log(chalk.gray('   You can set up credentials by selecting "Generate code" again.'));
+      return;
+    }
+
     const spinner = ora({
       text: chalk.gray('Generating blockchain integration...'),
       color: 'cyan'
@@ -828,6 +837,36 @@ export class LaunchInterface {
     console.log();
     console.log(chalk.green('✨ Your blockchain integration is ready!'));
     console.log();
+  }
+
+  /**
+   * Ensure credentials are configured and valid for the selected chain
+   * @returns true if credentials are ready, false otherwise
+   */
+  private async ensureCredentials(): Promise<boolean> {
+    if (!this.state.selectedChain) {
+      return false;
+    }
+
+    const credentialSetup = new CredentialSetup(
+      this.state.selectedChain,
+      this.state.network as NetworkType
+    );
+
+    const result = await credentialSetup.runSetup();
+
+    if (result.success) {
+      return true;
+    } else if (result.skipped) {
+      // User chose to skip - return false to prevent code generation
+      return false;
+    } else {
+      // Setup failed
+      if (result.error) {
+        console.log(chalk.red(`\n   Credential setup failed: ${result.error}`));
+      }
+      return false;
+    }
   }
 
   /**

@@ -70,6 +70,9 @@ export interface ChainCredentials {
   // Universal
   mnemonic?: string
   walletProvider?: WalletProvider
+
+  // Custom configuration (RPC URLs, etc.)
+  customConfig?: Record<string, any>
 }
 
 /**
